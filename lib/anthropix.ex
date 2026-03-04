@@ -132,17 +132,27 @@ defmodule Anthropix do
     ],
     description: [
       type: :string,
-      required: true,
+      required: false,
       doc: "Description of the tool"
     ],
     input_schema: [
       type: @permissive_map,
-      required: true,
+      required: false,
       doc: "JSON schema for the tool input shape that the model will produce in tool_use output content blocks."
     ],
     cache_control: [
       type: @permissive_map,
       doc: "Cache-control parameter."
+    ],
+    type: [
+      type: :string,
+      required: false,
+      doc: "The type of the tool."
+    ],
+    max_uses: [
+      type: :integer,
+      required: false,
+      doc: "The maximum number of times the tool can be used."
     ]
   ]
 
@@ -331,6 +341,10 @@ defmodule Anthropix do
       ],
       doc: "Enable thinking mode and the budget of tokens to use."
     ],
+    context_management: [
+      type: :map,
+      doc: "Context management settings."
+    ],
     max_tokens: [
       type: :integer,
       default: 4096,
@@ -343,6 +357,10 @@ defmodule Anthropix do
     stop_sequences: [
       type: {:list, :string},
       doc: "Custom text sequences that will cause the model to stop generating.",
+    ],
+    container: [
+      type: :string,
+      doc: "The container ID for the request.",
     ],
     stream: [
       type: {:or, [:boolean, :pid]},
