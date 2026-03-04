@@ -101,6 +101,7 @@ defmodule Anthropix do
   """
   use Anthropix.Schemas
   alias Anthropix.APIError
+  require Logger
 
   defstruct [:req]
 
@@ -505,18 +506,21 @@ defmodule Anthropix do
     "content_block_stop",
     "message_delta",
     "message_stop",
+    "error",
   ]
 
   # Returns a callback to handle streaming responses
   @spec stream_handler(pid()) :: fun()
   defp stream_handler(pid) do
     fn {:data, data}, {req, res} ->
-      res =
+      decoded =
         @sse_regex
         |> Regex.scan(data)
         |> Enum.filter(& match?([_, event, _data] when event in @sse_events, &1))
         |> Enum.map(fn [_, _event, data] -> Jason.decode!(data) end)
-        |> Enum.reduce(res, fn data, res ->
+
+      res =
+        Enum.reduce(decoded, res, fn data, res ->
           Process.send(pid, {self(), {:data, data}}, [])
           stream_merge(res, data)
         end)
@@ -579,6 +583,11 @@ defmodule Anthropix do
         end)
       end)
     end)
+  end
+
+  defp stream_merge(res, %{"type" => "error", "error" => error}) do
+    Logger.error("[Anthropix.stream] API error: #{error["type"]} - #{error["message"]}")
+    res
   end
 
   defp stream_merge(res, _data), do: res
