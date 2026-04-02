@@ -12,6 +12,7 @@ defmodule Anthropix do
   - ✅ API client fully implementing the [Anthropic API](https://docs.anthropic.com/claude/reference/getting-started-with-the-api)
   - 🧰 Tool use (function calling)
   - 🧠 Extended thinking
+  - 🏎️ Fast mode
   - ⚡ Prompt caching
   - 📦 Message batching (`Anthropix.Batch`)
   - 🛜 Streaming API requests
@@ -388,6 +389,10 @@ defmodule Anthropix do
     top_p: [
       type: :float,
       doc: "Amount of randomness injected into the response."
+    ],
+    speed: [
+      type: {:in, ["fast"]},
+      doc: "Set to `\"fast\"` to enable fast mode (up to 2.5x higher output tokens/sec). Currently supported on `claude-opus-4-6`. The required beta header is added automatically.",
     ],
   ]
 
