@@ -338,10 +338,11 @@ defmodule Anthropix do
     thinking: [
       type: :map,
       keys: [
-        type: [type: {:in, ["enabled"]}],
-        budget_tokens: [type: :non_neg_integer]
+        type: [type: {:in, ["enabled", "disabled", "adaptive"]}],
+        budget_tokens: [type: :non_neg_integer],
+        display: [type: {:in, ["summarized", "omitted"]}]
       ],
-      doc: "Enable thinking mode and the budget of tokens to use."
+      doc: "Configure extended thinking. `:type` is `\"enabled\"`, `\"disabled\"`, or `\"adaptive\"` (Claude Opus 4.7+). `:budget_tokens` sets the thinking token budget for `\"enabled\"` mode. `:display` controls how thinking content is returned (`\"summarized\"` or `\"omitted\"`)."
     ],
     context_management: [
       type: :map,
