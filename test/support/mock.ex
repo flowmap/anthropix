@@ -285,6 +285,19 @@ defmodule Anthropix.Mock do
     end)
   end
 
+  @spec stream_split_chunks(Plug.Conn.t(), term()) :: Plug.Conn.t()
+  def stream_split_chunks(conn, name) when is_atom(name) do
+    sse_data = Enum.map_join(@stream_mocks[name], "", &to_sse_event/1)
+
+    mid = div(byte_size(sse_data), 2)
+    <<first::binary-size(mid), second::binary>> = sse_data
+
+    conn = send_chunked(conn, 200)
+    {:ok, conn} = chunk(conn, first)
+    {:ok, conn} = chunk(conn, second)
+    conn
+  end
+
   defp to_sse_event(%{"type" => event} = data) do
     """
     event: #{event}

@@ -515,15 +515,28 @@ defmodule Anthropix do
     "error",
   ]
 
-  # Returns a callback to handle streaming responses
+  # Returns a callback to handle streaming responses.
+  # Buffers partial data in res.private across HTTP chunk callbacks, splitting
+  # on \n\n (SSE event boundary) so events that span chunk boundaries are not
+  # silently dropped.
   @spec stream_handler(pid()) :: fun()
   defp stream_handler(pid) do
     fn {:data, data}, {req, res} ->
+      buffer = res.private[:sse_buffer] || ""
+      data = buffer <> data
+
+      parts = String.split(data, "\n\n")
+      {complete, [remainder]} = Enum.split(parts, -1)
+      res = put_in(res.private[:sse_buffer], remainder)
+
       decoded =
-        @sse_regex
-        |> Regex.scan(data)
-        |> Enum.filter(& match?([_, event, _data] when event in @sse_events, &1))
-        |> Enum.map(fn [_, _event, data] -> Jason.decode!(data) end)
+        complete
+        |> Enum.flat_map(fn event_text ->
+          @sse_regex
+          |> Regex.scan(event_text <> "\n")
+          |> Enum.filter(& match?([_, event, _data] when event in @sse_events, &1))
+          |> Enum.map(fn [_, _event, data] -> Jason.decode!(data) end)
+        end)
 
       res =
         Enum.reduce(decoded, res, fn data, res ->

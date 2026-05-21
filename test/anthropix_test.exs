@@ -164,6 +164,27 @@ defmodule AnthropixTest do
 
       res = Enum.to_list(stream)
       assert Enum.any?(res, & &1["type"] == "content_block_delta" && get_in(&1, ["delta", "type"]) == "thinking_delta")
+      assert Enum.any?(res, & &1["type"] == "content_block_delta" && get_in(&1, ["delta", "type"]) == "signature_delta")
+    end
+
+    test "streams with split HTTP chunks preserve all events including signature_delta" do
+      client = Mock.client(& Mock.stream_split_chunks(&1, :messages_thinking))
+      assert {:ok, stream} = Anthropix.chat(client, [
+        model: "claude-3-7-sonnet-20250219",
+        messages: [
+          %{role: "user", content: "How many R's are there in strawberry?"}
+        ],
+        thinking: %{
+          type: "enabled",
+          budget_tokens: 1024,
+        },
+        max_tokens: 2048,
+        stream: true
+      ])
+
+      res = Enum.to_list(stream)
+      assert Enum.any?(res, & &1["type"] == "content_block_delta" && get_in(&1, ["delta", "type"]) == "thinking_delta")
+      assert Enum.any?(res, & &1["type"] == "content_block_delta" && get_in(&1, ["delta", "type"]) == "signature_delta")
     end
 
     test "throws error if thinking tokens budget exceeds max_tokens" do
