@@ -71,6 +71,20 @@ defmodule AnthropixTest do
       assert get_in(last, ["usage", "output_tokens"]) == 34
     end
 
+    test "forwards ping keepalive events without corrupting the message" do
+      client = Mock.client(& Mock.stream(&1, :messages))
+      assert {:ok, stream} = Anthropix.chat(client, [
+        model: "claude-3-sonnet-20240229",
+        messages: [
+          %{role: "user", content: "Write a haiku about the colour of the sky."}
+        ],
+        stream: true
+      ])
+      res = Enum.to_list(stream)
+      assert Enum.any?(res, & &1["type"] == "ping")
+      assert Enum.count(res, & &1["type"] == "message_stop") == 1
+    end
+
     test "generates a response with tool use" do
       client = Mock.client(& Mock.respond(&1, :messages_tools))
       assert {:ok, res} = Anthropix.chat(client, [
@@ -250,7 +264,7 @@ defmodule AnthropixTest do
       ])
 
       assert is_function(stream, 2)
-      assert Enum.to_list(stream) |> length() == 31
+      assert Enum.to_list(stream) |> length() == 32
     end
 
     test "with stream: pid, returns a task and sends messages to pid" do
@@ -266,7 +280,7 @@ defmodule AnthropixTest do
 
       assert match?(%Task{}, task)
       assert {:ok, %{"content" => [%{"text" => "Here's a haiku" <> _} | _]}} = Task.await(task)
-      assert Anthropix.StreamCatcher.get_state(pid) |> length() == 31
+      assert Anthropix.StreamCatcher.get_state(pid) |> length() == 32
       GenServer.stop(pid)
     end
   end

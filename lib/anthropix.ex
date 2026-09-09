@@ -512,6 +512,9 @@ defmodule Anthropix do
     "content_block_stop",
     "message_delta",
     "message_stop",
+    # Keepalive. Carries no data, but must not be dropped - forwarding it
+    # resets the idle timeout in stream_next/1 during long quiet periods.
+    "ping",
     "error",
   ]
 

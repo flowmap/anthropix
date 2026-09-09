@@ -142,6 +142,7 @@ defmodule Anthropix.Mock do
         "type" => "message",
         "usage" => %{"input_tokens" => 18, "output_tokens" => 1}
       }},
+      %{"type" => "ping"},
       %{"type" => "content_block_start", "index" => 0, "content_block" => %{"text" => "", "type" => "text"}},
       %{"type" => "content_block_delta", "index" => 0, "delta" => %{"text" => "Here", "type" => "text_delta"}},
       %{"type" => "content_block_delta", "index" => 0, "delta" => %{"text" => "'s", "type" => "text_delta"}},
