@@ -268,6 +268,11 @@ defmodule Anthropix do
   # Current none active by default
   @default_beta_tokens []
 
+  # Idle timeout for the consumer side of a streaming response. Must exceed the
+  # transport `:receive_timeout`, otherwise the stream halts with a truncated
+  # message instead of surfacing the transport error.
+  @stream_timeout 300_000
+
   @doc """
   Calling `init/1` without passing an API key, creates a new Anthropix API
   client using the API key set in your application's config.
@@ -632,7 +637,7 @@ defmodule Anthropix do
       {:DOWN, _ref, _, _pid, _reason} ->
         {:halt, task}
     after
-      30_000 -> {:halt, task}
+      @stream_timeout -> {:halt, task}
     end
   end
 
