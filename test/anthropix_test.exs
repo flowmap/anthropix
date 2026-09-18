@@ -201,6 +201,41 @@ defmodule AnthropixTest do
       assert Enum.any?(res, & &1["type"] == "content_block_delta" && get_in(&1, ["delta", "type"]) == "signature_delta")
     end
 
+    test "accepts output_config for structured outputs and effort" do
+      client = Mock.client(& Mock.respond(&1, :messages))
+      assert {:ok, _res} = Anthropix.chat(client, [
+        model: "claude-3-sonnet-20240229",
+        messages: [
+          %{role: "user", content: "Extract the email from: John (john@example.com)"}
+        ],
+        output_config: %{
+          effort: "low",
+          format: %{
+            type: "json_schema",
+            schema: %{
+              type: "object",
+              properties: %{
+                email: %{type: "string"}
+              },
+              required: ["email"],
+              additionalProperties: false
+            }
+          }
+        }
+      ])
+    end
+
+    test "rejects invalid output_config effort" do
+      client = Mock.client(& Mock.respond(&1, :messages))
+      assert {:error, %NimbleOptions.ValidationError{}} = Anthropix.chat(client, [
+        model: "claude-3-sonnet-20240229",
+        messages: [
+          %{role: "user", content: "Hello"}
+        ],
+        output_config: %{effort: "super"}
+      ])
+    end
+
     test "throws error if thinking tokens budget exceeds max_tokens" do
       client = Mock.client(& Mock.respond(&1, 400))
       assert {:error, %APIError{status: 400, type: "bad_request"}} = Anthropix.chat(client, [

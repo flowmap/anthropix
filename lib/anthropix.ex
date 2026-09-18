@@ -12,6 +12,7 @@ defmodule Anthropix do
   - ✅ API client fully implementing the [Anthropic API](https://docs.anthropic.com/claude/reference/getting-started-with-the-api)
   - 🧰 Tool use (function calling)
   - 🧠 Extended thinking
+  - 📋 Structured outputs (`output_config`)
   - 🏎️ Fast mode
   - ⚡ Prompt caching
   - 📦 Message batching (`Anthropix.Batch`)
@@ -170,6 +171,19 @@ defmodule Anthropix do
     ],
     disable_parallel_tool_use: [
       type: :boolean
+    ]
+  ]
+
+  schema :output_config_format, [
+    type: [
+      type: {:in, ["json_schema"]},
+      required: true,
+      doc: "Must be `\"json_schema\"`."
+    ],
+    schema: [
+      type: @permissive_map,
+      required: true,
+      doc: "The JSON schema of the format."
     ]
   ]
 
@@ -361,6 +375,21 @@ defmodule Anthropix do
     metadata: [
       type: @permissive_map,
       doc: "A map describing metadata about the request.",
+    ],
+    output_config: [
+      type: :map,
+      keys: [
+        effort: [
+          type: {:in, ["low", "medium", "high", "xhigh", "max"]},
+          doc: "How many tokens Claude uses (`\"low\"`, `\"medium\"`, `\"high\"`, `\"xhigh\"`, or `\"max\"`)."
+        ],
+        format: [
+          type: :map,
+          keys: schema(:output_config_format).schema,
+          doc: "A JSON schema for structured outputs."
+        ]
+      ],
+      doc: "Configuration options for the model's output, such as effort and output format."
     ],
     stop_sequences: [
       type: {:list, :string},
