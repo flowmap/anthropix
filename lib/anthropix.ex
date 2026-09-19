@@ -156,6 +156,11 @@ defmodule Anthropix do
       type: :integer,
       required: false,
       doc: "The maximum number of times the tool can be used."
+    ],
+    defer_loading: [
+      type: :boolean,
+      required: false,
+      doc: "If true, the tool is excluded from the initial system prompt and loaded on demand when tool search returns a `tool_reference` for it."
     ]
   ]
 
@@ -241,9 +246,10 @@ defmodule Anthropix do
   #{doc(:chat_tool)}
   """
   @type tool() :: %{
+    optional(:defer_loading) => boolean(),
     name: String.t(),
     description: String.t(),
-    input_schema: input_schema(),
+    input_schema: input_schema()
   }
 
   @typedoc "JSON schema for the tool `input` shape."

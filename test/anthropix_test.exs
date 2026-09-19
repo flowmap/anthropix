@@ -142,6 +142,34 @@ defmodule AnthropixTest do
       assert get_in(last, ["usage", "output_tokens"]) == 61
     end
 
+    test "accepts tools with defer_loading" do
+      client = Mock.client(& Mock.respond(&1, :messages_tools))
+      assert {:ok, res} = Anthropix.chat(client, [
+        model: "claude-3-haiku-20240307",
+        messages: [
+          %{role: "user", content: "What is the weather in London?"}
+        ],
+        tools: [
+          %{
+            name: "get_weather",
+            description: "Fetches the weather for the given location.",
+            input_schema: %{
+              type: "object",
+              properties: %{
+                location: %{type: "string", description: "Location name - town, city or area."}
+              },
+              required: ["location"]
+            },
+            defer_loading: true
+          }
+        ]
+      ])
+
+      block = Enum.find(res["content"], & &1["type"] == "tool_use")
+      assert is_map(block)
+      assert get_in(block, ["name"]) == "get_weather"
+    end
+
     test "generates a response with extended thinking" do
       client = Mock.client(& Mock.respond(&1, :messages_thinking))
       assert {:ok, res} = Anthropix.chat(client, [
