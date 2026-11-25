@@ -161,6 +161,11 @@ defmodule Anthropix do
       type: :boolean,
       required: false,
       doc: "If true, the tool is excluded from the initial system prompt and loaded on demand when tool search returns a `tool_reference` for it."
+    ],
+    allowed_callers: [
+      type: {:list, :string},
+      required: false,
+      doc: "Restricts which callers can invoke the tool. `\"direct\"` allows a normal `tool_use` call (the default when omitted). A code-execution tool version, such as `\"code_execution_20260120\"`, allows the tool to be called from code execution."
     ]
   ]
 
@@ -246,6 +251,7 @@ defmodule Anthropix do
   #{doc(:chat_tool)}
   """
   @type tool() :: %{
+    optional(:allowed_callers) => list(String.t()),
     optional(:defer_loading) => boolean(),
     name: String.t(),
     description: String.t(),
