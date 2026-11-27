@@ -567,16 +567,19 @@ defmodule Anthropix do
   # Returns a callback to handle streaming responses.
   # Buffers partial data in res.private across HTTP chunk callbacks, splitting
   # on \n\n (SSE event boundary) so events that span chunk boundaries are not
-  # silently dropped.
+  # silently dropped. SSE lines may end with CRLF, LF or CR, so line endings
+  # are normalized to \n first.
   @spec stream_handler(pid()) :: fun()
   defp stream_handler(pid) do
     fn {:data, data}, {req, res} ->
       buffer = res.private[:sse_buffer] || ""
       data = buffer <> data
+      trailing_cr? = String.ends_with?(data, "\r")
+      data = data |> String.replace("\r\n", "\n") |> String.replace("\r", "\n")
 
       parts = String.split(data, "\n\n")
       {complete, [remainder]} = Enum.split(parts, -1)
-      res = put_in(res.private[:sse_buffer], remainder)
+      res = put_in(res.private[:sse_buffer], buffer_remainder(remainder, trailing_cr?))
 
       decoded =
         complete
@@ -596,6 +599,17 @@ defmodule Anthropix do
       {:cont, {req, res}}
     end
   end
+
+  # A chunk ending in \r may be the first half of a CRLF split across chunks.
+  # The \r is a line end either way, so it already counts as \n when splitting
+  # events, but it is kept as \r in the buffer so that a \n at the start of the
+  # next chunk is normalized together with it rather than as a second line end.
+  @spec buffer_remainder(binary(), boolean()) :: binary()
+  defp buffer_remainder(remainder, false), do: remainder
+  defp buffer_remainder("", true), do: "\r"
+
+  defp buffer_remainder(remainder, true),
+    do: binary_part(remainder, 0, byte_size(remainder) - 1) <> "\r"
 
   # Merges streaming message responses
   @spec stream_merge(Req.Response.t(), map()) :: Req.Response.t()
